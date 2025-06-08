@@ -58,3 +58,5 @@ MIT
 ## ETH Taipei Hackathon 2025
 
 This project was initially built during ETH Taipei Hackathon 2025. It aims to solve the payment challenges in web3 by enabling gasless USDC subscriptions through Account Abstraction and Circle's Paymaster.
+
+>Note: This project is a work in progress, we still need to implement transaction functionality and UI components like pending status, success, and failure notifications.
