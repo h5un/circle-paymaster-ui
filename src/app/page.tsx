@@ -1,6 +1,5 @@
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Header from '../components/Header';
-import Hom from '../components/TransferForm';
 import { HomeContent } from "@/components/HomeContent";
 
 export default function Home() {

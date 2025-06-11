@@ -1,27 +1,27 @@
 import { createPublicClient, http, WalletClient } from "viem";
 import { toCircleSmartAccount } from "@circle-fin/modular-wallets-core";
 import { arbitrumSepolia } from "viem/chains";
-import { useWalletClient } from "wagmi";
-import { type UseWalletClientParameters } from "wagmi";
 
 const chain = arbitrumSepolia;
 
 /**
- * 產生使用者對應的 Circle Smart Account（Account Abstraction）
- * @param walletClient - 使用者連接的 EOA 簽名錢包
+ * Generates a Circle Smart Account (Account Abstraction) for the user.
+ * @param walletClient - The externally owned account (EOA) wallet connected by the user.
+ * @returns An object containing the Circle Smart Account and the public client.
+ * @throws An error if the walletClient is undefined.
  */
 export async function getSmartAccount(walletClient: any) {
   if (!walletClient) {
-    throw new Error("walletClient is undefined (did user connect wallet?)");
+    throw new Error("walletClient is undefined ");
   }
-  console.log("Wallet Client:", walletClient);
   const publicClient = createPublicClient({ chain, transport: http() });
-
-  const { account } = walletClient;
+  
+  const { account } = walletClient; // get the param for `toCircleSmartAccount`
+  // console.log("Wallet Client account :", account);
   const smartAccount = await toCircleSmartAccount({
     client: publicClient,
     owner: account,
   });
-  console.log("Smart Account:", smartAccount);
+  // console.log("Smart Account:", smartAccount);
   return { smartAccount, publicClient };
 }

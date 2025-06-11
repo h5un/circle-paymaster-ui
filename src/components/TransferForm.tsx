@@ -7,23 +7,20 @@ import { getSmartAccount } from "@/lib/getSmartAccount";
 import { type UseWalletClientParameters } from 'wagmi'
 
 export default function TransferForm() {
+    const usdcTokenAddress = process.env.NEXT_PUBLIC_USDC_ADDRESS;
     const [recipient, setRecipient] = useState<string>("");
     const [amount, setAmount] = useState("");
     const [loading, setLoading] = useState(false)
-    const [smartAccount, setSmartAccount] = useState("" as `0x${string}`); 
+    const [smartAccount, setSmartAccount] = useState<any>(null); 
     const [publicClient, setPublicClient] = useState(null);
 
-    const { data: walletClient } = useWalletClient(); // 使用者連接的錢包
-    const { address } = useAccount(); // 使用者的地址
+    const { data: walletClient } = useWalletClient(); // 使用者連接的錢包, a hook provided by wagmi
     
-    const usdcTokenAddress = process.env.NEXT_PUBLIC_USDC_ADDRESS;
-
+    // 只要「使用者連上錢包」後，就立即建立對應的 Smart Account 並記下來
     useEffect(() => {
         async function fetchSmartAccount() {
-            // if (!walletClient) {
-            //     console.error("Wallet client is not available");
-            //     return;
-            // }
+            if (!walletClient) return; // 保護機制：只有在有錢包時才跑下面的 async
+            
             try {
                 const { smartAccount } = await getSmartAccount(walletClient!);
                 setSmartAccount(smartAccount);
@@ -33,14 +30,15 @@ export default function TransferForm() {
         }
         fetchSmartAccount();
     }, [walletClient]); // 只要 walletClient 發生變化，就重新執行一次上面這整段
-
-    const { data, isLoading, isError, refetch } = useBalance({
-        address: smartAccount,
+    
+    const { data, isLoading, isError, refetch /* Hook 回傳*/ } = useBalance({
+        address: smartAccount?.address,
         token: usdcTokenAddress as `0x${string}`,
         query: {
-            enabled: true,  // 可控式開關
+            enabled: !!smartAccount,  // 確保只有在 smartAccount 存在時才執行
         },
     });
+    
 
     async function handleSubmit() {
         setLoading(true)
@@ -70,7 +68,7 @@ export default function TransferForm() {
     
     return (
         <div>
-            <p >Smart Account Address: {smartAccount}</p>
+            <p >Smart Account Address: {smartAccount?.address}</p>
             <p style={{ marginBottom: "1rem" }}>
                 Smart Account Balance:{" "}
                 {
