@@ -30,7 +30,7 @@ export default function Header() {
 
       <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
         <a
-          href="https://github.com/h5un/Tsender-ui.git"
+          href="https://github.com/h5un/circle-paymaster-ui.git"
           target="_blank"
           rel="noopener noreferrer"
           style={{
