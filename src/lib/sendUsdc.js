@@ -16,19 +16,20 @@ function toUSDCUnits(amountStr) {
   return BigInt(integer + decimal)
 } 
 
+const usdcAddress = process.env.NEXT_PUBLIC_USDC_ADDRESS
+
 /**
  * 發送 USDC 的交易，透過 Circle Smart Account 與 Paymaster 完成 gasless 操作
  * User has to connect their wallet and input the recipient address and amount.
  * @param {object} params - 參數
  * @param {`0x${string}`} params.account - Circle Smart Account 物件
+ * @param {object} params.walletClient - 使用者連接的錢包客戶端
  * @param {string} params.recipient - 接收者地址
  * @param {string} params.amount - 使用者輸入的金額字串（例如 "1.5"）
  * @returns {Promise<string>} - 成功後回傳交易哈希值 (transaction hash)
  */
-export async function sendUsdc({ account, recipient, amount }) {
+export async function sendUsdc({ account, walletClient, recipient, amount }) {
     const chain = arbitrumSepolia
-    const usdcAddress = process.env.NEXT_PUBLIC_USDC_ADDRESS
-
     const client = createPublicClient({ chain, transport: http() })
     // const account = await toCircleSmartAccount({ client: client, owner: walletClient })
 
@@ -36,20 +37,19 @@ export async function sendUsdc({ account, recipient, amount }) {
     const usdc = getContract({ client, address: usdcAddress, abi: erc20Abi })
     const usdcBalance = await usdc.read.balanceOf([account.address])
 
-    // if (usdcBalance < 1000000) {
-    //   return Response.json({
-    //     error: `Insufficient USDC balance: ${usdcBalance.toString()}`,
-    //   }, { status: 400 })
-    // }
-    
     // Use the Circle permit
     const paymasterAddress = process.env.NEXT_PUBLIC_PAYMASTER_V07_ADDRESS
     const paymaster = {
         async getPaymasterData(parameters) {
           const permitAmount = 10_000_000n
+          // 一開始的index.js用的是privateKeyToAccount()的return值去生成smart account，
+          // 並用這個smart account去sign permit，所以可以成功。
+          // 但我生成smart account是利用walletClient.account，
+          // 所以這個smart account沒辦法sign permit
+          
           const permitSignature = await signPermit({
             tokenAddress: usdcAddress,
-            account,
+            walletClient: walletClient,
             client,
             spenderAddress: paymasterAddress,
             permitAmount: permitAmount,

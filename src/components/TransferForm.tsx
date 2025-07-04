@@ -4,7 +4,6 @@ import { useAccount, useBalance, useWalletClient } from "wagmi";
 import InputField from "@/components/ui/InputField"; 
 import { sendUsdc } from "../lib/sendUsdc"; 
 import { getSmartAccount } from "@/lib/getSmartAccount";
-import { type UseWalletClientParameters } from 'wagmi'
 
 export default function TransferForm() {
     const usdcTokenAddress = process.env.NEXT_PUBLIC_USDC_ADDRESS;
@@ -12,7 +11,6 @@ export default function TransferForm() {
     const [amount, setAmount] = useState("");
     const [loading, setLoading] = useState(false)
     const [smartAccount, setSmartAccount] = useState<any>(null); 
-    const [publicClient, setPublicClient] = useState(null);
 
     const { data: walletClient } = useWalletClient(); // 使用者連接的錢包, a hook provided by wagmi
     
@@ -46,8 +44,13 @@ export default function TransferForm() {
         console.log("Recipient:", recipient);
         console.log("Amount:", amount);
         try{
+            if (!walletClient) {
+                alert("Wallet not connected");
+                return;
+            }
             const txHash = await sendUsdc({
-                account: smartAccount,
+                account: smartAccount, // data type must be the return value of `toCircleSmartAccount`
+                walletClient: walletClient!, // 使用者連接的錢包
                 recipient: recipient,
                 amount: amount,
             });
@@ -59,7 +62,8 @@ export default function TransferForm() {
         }
         catch (error) {
             console.error("Error during transfer:", error);
-            alert("❌ Transfer failed. Please check the console for details.");
+            const errMsg = (error as Error).message;
+            alert(`❌ Transfer failed: ${errMsg || "Unknown error"}`);
         }
         finally {
             setLoading(false)

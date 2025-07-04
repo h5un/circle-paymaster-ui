@@ -70,10 +70,11 @@ export const eip2612Abi = [
   },
 ]
 
+// 使用 EOA 的 walletClient 來簽署 permit 的主要函式
 export async function signPermit({
   tokenAddress,
   client,
-  account,
+  walletClient,
   spenderAddress,
   permitAmount,
 }) {
@@ -82,28 +83,39 @@ export async function signPermit({
     address: tokenAddress,
     abi: eip2612Abi,
   })
+
+  const address = walletClient.account.address;
+
   const permitData = await eip2612Permit({
     token,
     chain: client.chain,
-    ownerAddress: account.address,
+    ownerAddress: address,
     spenderAddress,
     value: permitAmount,
   })
 
-  const wrappedPermitSignature = await account.signTypedData(permitData)
+  // 使用 walletClient 彈出視窗請使用者進行簽名
+  const signature = await walletClient.signTypedData({
+    account: address,
+    domain: permitData.domain,
+    types: permitData.types,
+    primaryType: permitData.primaryType,
+    message: permitData.message,
+  });
 
   const isValid = await client.verifyTypedData({
     ...permitData,
-    address: account.address,
-    signature: wrappedPermitSignature,
+    address: address,
+    signature: signature,
   })
 
   if (!isValid) {
     throw new Error(
-      `Invalid permit signature for ${account.address}: ${wrappedPermitSignature}`,
+      `Invalid permit signature for ${address}: ${signature}`,
     )
   }
 
-  const { signature } = parseErc6492Signature(wrappedPermitSignature)
-  return signature
+  // 解析簽名，移除 ERC-6492 包裝格式，取出原始 signature bytes
+  const { signature: stripped } = parseErc6492Signature(signature)
+  return stripped // 回傳可直接用於 paymasterData 的原始簽名
 }
